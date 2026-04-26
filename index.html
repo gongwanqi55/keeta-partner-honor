@@ -81,6 +81,8 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI','Helvetica Ne
 .bar-sep{width:1px;height:22px;background:rgba(26,26,26,.3)}
 .filter-group{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;align-items:center}
 .filter-label{font-size:12px;color:#1A1A1A;align-self:center;padding-right:4px;font-weight:600}
+#city-select{background:#fff;border:1.5px solid rgba(26,26,26,.25);border-radius:20px;padding:4px 16px;font-size:13px;color:#1A1A1A;cursor:pointer;font-weight:500;outline:none;appearance:auto;min-width:130px}
+#city-select:focus{border-color:#3DBB6B;box-shadow:0 1px 4px rgba(0,0,0,.15)}
 
 /* ── STATS BAR ────────────────────────────────────── */
 .stats-bar{background:var(--keeta-yellow);padding:14px 20px;display:flex;justify-content:center;gap:40px;flex-wrap:wrap}
@@ -364,22 +366,10 @@ html[lang=ar] .star-row{flex-direction:row}
     <button class="lb" onclick="setLang('ar')">عربي</button>
   </div>
   <div class="bar-sep"></div>
-  <div class="filter-group">
+  <div class="filter-group" id="city-filter-group">
     <span class="filter-label t en">City:</span>
     <span class="filter-label t ar">المدينة:</span>
-    <span class="filter-label t zh">城市筛选:</span>
-    <button class="fb active" onclick="setCity('all')" data-city="all">
-      <span class="t en">All</span><span class="t ar">الكل</span>
-    </button>
-    <button class="fb" onclick="setCity('t1r')" data-city="t1r">
-      <span class="t en">T1 Riyadh</span><span class="t ar">T1 الرياض</span>
-    </button>
-    <button class="fb" onclick="setCity('t1o')" data-city="t1o">
-      <span class="t en">T1 Other</span><span class="t ar">T1 أخرى</span>
-    </button>
-    <button class="fb" onclick="setCity('t2')" data-city="t2">
-      <span class="t en">T2 Cities</span><span class="t ar">مدن T2</span>
-    </button>
+    <select id="city-select" onchange="setCity(this.value)"></select>
   </div>
 </div>
 
@@ -654,6 +644,7 @@ function buildCards() {
     el.innerHTML = DATA[id].map((p, i) => {
       const rankLabel = RANK_LABELS[p.rank]?.[lang] || p.rank;
       const seg = id.split('-').slice(1).join('-'); // e.g. t1r, t1o, t2
+      const cityKey = (p.city || '').toLowerCase().replace(/\s+/g,'_');
       const avatarHtml = p.avatar
         ? `<img src="${p.avatar}" alt="${p.name}" onerror="this.style.display='none'">`
         : `<span>${getInitials(p.name)}</span>`;
@@ -661,7 +652,7 @@ function buildCards() {
       const AWARD_EN = {oe:'Operational Excellence',rs:'Rising Star',tc:'Top Compliance',ci:'Best Improvement'};
       const TIER_EN  = {g:'1st Place',s:'2nd Place',b:'3rd Place',w:'Winner'};
       const shareText = `🏆 ${p.name} has been awarded the Keeta Ramadan ${AWARD_EN[award] || award} (${TIER_EN[p.rank] || p.rank})!`;
-      return `<div class="card ${p.rank}" data-seg="${seg}" data-idx="${i}" id="card-${id}-${i}">
+      return `<div class="card ${p.rank}" data-seg="${seg}" data-city="${cityKey}" data-idx="${i}" id="card-${id}-${i}">
         <div class="shimmer-bar"></div>
         <button class="share-btn" title="Share" onclick="shareCard(this,'${encodeURIComponent(shareText)}')">📤</button>
         <div class="avatar" style="${p.avatar ? '' : 'background:' + avatarColor(p.name)}"
@@ -678,58 +669,55 @@ function buildCards() {
   });
   applyFilter();
   updateStats();
+  buildCitySelect();
 }
 
 // ─────────────────────────────────────────────────────
-//  FILTER BY CITY SEGMENT
+//  BUILD CITY SELECT (called once after buildCards)
 // ─────────────────────────────────────────────────────
-function setCity(seg) {
-  currentCity = seg;
-  document.querySelectorAll('.fb').forEach(b => {
-    b.classList.toggle('active', b.dataset.city === seg);
-  });
+function buildCitySelect() {
+  const sel = document.getElementById('city-select');
+  if (!sel) return;
+  // collect unique cities from DATA, sorted alphabetically
+  const cities = [...new Set(Object.values(DATA).flat().map(p => p.city || '').filter(Boolean))].sort();
+  const lang = getCurrentLang();
+  const allLabel = lang === 'ar' ? 'الكل' : 'All Cities';
+  sel.innerHTML = `<option value="all">${allLabel}</option>` +
+    cities.map(c => {
+      const key = c.toLowerCase().replace(/\s+/g,'_');
+      return `<option value="${key}">${c}</option>`;
+    }).join('');
+  sel.value = currentCity;
+}
+
+// ─────────────────────────────────────────────────────
+//  FILTER BY CITY
+// ─────────────────────────────────────────────────────
+function setCity(val) {
+  currentCity = val;
+  const sel = document.getElementById('city-select');
+  if (sel) sel.value = val;
   applyFilter();
   updateStats();
 }
 
 function applyFilter() {
   document.querySelectorAll('.card').forEach(card => {
-    const seg = card.dataset.seg;
-    const show = currentCity === 'all' || seg === currentCity;
+    const city = card.dataset.city || '';
+    const show = currentCity === 'all' || city === currentCity;
     card.hidden = !show;
   });
-  // show/hide .loc headers
+  // show/hide .loc headers — always visible when filtering by city
   document.querySelectorAll('.loc').forEach(loc => {
-    const seg = loc.dataset.seg;
-    if (!seg) return;
-    loc.style.display = (currentCity === 'all' || seg === currentCity) ? '' : 'none';
+    loc.style.display = '';
   });
 }
 
 function updateStats() {
   const all = Object.values(DATA).flat();
-  const count = (seg) => currentCity === 'all'
-    ? all.filter(p => seg === 'all' || keyForPartner(p) === seg).length
-    : all.filter(p => keyForPartner(p) === seg).length;
-
-  // map segment from DATA key suffix
-  function keyForPartner(p) {
-    for (const [id, arr] of Object.entries(DATA)) {
-      if (arr.includes(p)) return id.split('-').slice(1).join('-');
-    }
-    return '';
-  }
-
-  const total = currentCity === 'all' ? all.length
-    : all.filter(p => keyForPartner(p) === currentCity).length;
-
-  const t1rCount = all.filter(p => keyForPartner(p) === 't1r').length;
-  const t1oCount = all.filter(p => keyForPartner(p) === 't1o').length;
-  const t2Count  = all.filter(p => keyForPartner(p) === 't2').length;
-
-
-
-
+  const total = currentCity === 'all'
+    ? all.length
+    : all.filter(p => (p.city||'').toLowerCase().replace(/\s+/g,'_') === currentCity).length;
 }
 
 // ─────────────────────────────────────────────────────
