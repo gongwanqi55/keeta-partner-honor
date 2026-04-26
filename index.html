@@ -75,6 +75,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI','Helvetica Ne
 .trophy-desc{font-size:12px;color:var(--sub);text-align:center;line-height:1.5}
 
 /* ── LANG + FILTER BAR ────────────────────────────── */
+.lang-switcher{position:fixed;top:12px;right:16px;z-index:200;display:flex;gap:6px;align-items:center}
 .control-bar{background:rgba(255,255,255,0.95);border-bottom:2px solid #3DBB6B;padding:6px 16px;display:flex;justify-content:flex-end;padding-right:24px;align-items:center;gap:12px;flex-wrap:wrap;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.12);min-height:44px}
 .lb,.fb{background:none;border:1.5px solid rgba(26,26,26,.25);border-radius:20px;padding:4px 16px;font-size:13px;color:#1A1A1A;cursor:pointer;transition:all .2s;white-space:nowrap;font-weight:500}
 .lb.active,.lb:hover,.fb.active,.fb:hover{background:#fff;border-color:#fff;color:#1A1A1A;font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.15)}
@@ -258,11 +259,10 @@ html[lang=ar] .star-row{flex-direction:row}
   .trophy-img-wrap{width:160px;height:180px}
 }
 @media(max-width:480px){
-  /* Control bar: two rows */
-  .control-bar{flex-direction:column;gap:8px;padding:8px 12px}
-  .bar-sep{display:none}
-  .control-bar > .filter-group:first-child{width:100%;justify-content:center}
-  .control-bar > .filter-group:last-child{width:100%;justify-content:center;flex-wrap:wrap}
+  /* Control bar: single row city filter */
+  .control-bar{padding:6px 12px}
+  .lang-switcher{top:8px;right:10px;gap:4px}
+  .lang-switcher .lb{padding:3px 10px;font-size:12px}
 }
 @media(max-width:320px){
   .grid{grid-template-columns:1fr !important;gap:10px}
@@ -359,13 +359,14 @@ html[lang=ar] .star-row{flex-direction:row}
 
 
 
-<!-- ══ CONTROL BAR (lang + city filter) ══════════════ -->
+<!-- ══ LANG SWITCHER (fixed top-right) ══════════════ -->
+<div class="lang-switcher">
+  <button class="lb" onclick="setLang('en')">English</button>
+  <button class="lb" onclick="setLang('ar')">عربي</button>
+</div>
+
+<!-- ══ CONTROL BAR (city filter only) ══════════════ -->
 <div class="control-bar">
-  <div class="filter-group">
-    <button class="lb" onclick="setLang('en')">English</button>
-    <button class="lb" onclick="setLang('ar')">عربي</button>
-  </div>
-  <div class="bar-sep"></div>
   <div class="filter-group" id="city-filter-group">
     <span class="filter-label t en">City:</span>
     <span class="filter-label t ar">المدينة:</span>
