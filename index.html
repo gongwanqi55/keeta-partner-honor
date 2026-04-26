@@ -270,6 +270,19 @@ html[lang=ar] .star-row{flex-direction:row}
   html[dir=rtl] .share-btn{right:auto;left:6px}
 }
 </style>
+<script>
+(function(){
+  var TOKEN = 'keeta-honor-2026-ryd';
+  var params = new URLSearchParams(window.location.search);
+  if(params.get('token') !== TOKEN){
+    document.addEventListener('DOMContentLoaded', function(){
+      document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#F5C800;font-family:sans-serif;"><div style="text-align:center;"><div style="font-size:48px;">🏆</div><div style="font-size:18px;color:#1A1A1A;margin-top:12px;">This page is only available via a shared link.</div></div></div>';
+    });
+    // 也阻止脚本继续执行
+    window.__tokenInvalid = true;
+  }
+})();
+</script>
 </head>
 <body>
 
